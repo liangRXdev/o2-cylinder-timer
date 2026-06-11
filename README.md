@@ -3,8 +3,7 @@
 適用於攜帶式醫用氧氣小鋼瓶（0.5 m³ / 水容積 3.4 L）的**可用時間估算工具**。
 單一 HTML 檔案，無需後端，適合部署於 GitHub Pages 供護理站或轉送情境使用。
 
-→ **[Live Demo](https://liangrxdev.github.io/o2-cylinder-timer/)**
-
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Click%20Here-blue?style=for-the-badge)](https://liangrxdev.github.io/o2-cylinder-timer/)
 ---
 
 ## 使用情境
