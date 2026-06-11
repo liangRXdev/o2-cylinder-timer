@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O2 小鋼瓶可用時間計算器</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #F5F0E8;
+  --bg-card: #FFFFFF;
+  --accent: #3D7A8A;
+  --accent-hover: #2E6B7A;
+  --text-primary: #2C2C2C;
+  --text-muted: #6B7280;
+  --border: #E0D9CE;
+  --danger: #C0392B;
+  --success: #27AE60;
+  --warning: #E67E22;
+  --warn-bg: #FFF0E0;
+  --full-bg: #E4F2E4;
+  --radius-card: 8px;
+  --radius-input: 4px;
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.08);
+  --transition: 0.2s ease;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg-primary);
+  font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text-primary);
+}
+h1 { font-size: 1.4rem; font-weight: 700; }
+.tool-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+.section-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+/* 壓力輸入 */
+.psi-input {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-input);
+  min-height: 56px;
+  width: 100%;
+  transition: var(--transition);
+}
+.psi-input:focus { outline: none; border-color: var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; }
+/* 流量按鈕 */
+.flow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.flow-btn {
+  min-height: 52px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--bg-card);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: var(--transition);
+  cursor: pointer;
+}
+.flow-btn:hover { border-color: var(--accent); }
+.flow-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* 結果區 */
+.result-box {
+  border-radius: var(--radius-card);
+  padding: 1.5rem 1rem;
+  text-align: center;
+  transition: var(--transition);
+}
+.result-box.ok        { background: var(--full-bg); }
+.result-box.caution   { background: var(--warn-bg); }
+.result-box.danger    { background: #FCE8E8; }
+.result-box.idle      { background: #F2F6FB; }
+.result-minutes {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 3.2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.result-minutes.ok      { color: var(--accent); }
+.result-minutes.caution { color: var(--warning); }
+.result-minutes.danger  { color: var(--danger); }
+.result-status { font-size: 1rem; font-weight: 500; margin-top: 0.3rem; }
+.result-detail {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+/* 壓力指示條 */
+.psi-bar-track {
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(to right,
+    #FCE8E8 0%, #FCE8E8 11.1%,        /* 0–200 殘壓 */
+    var(--warn-bg) 11.1%, var(--warn-bg) 33.3%,  /* 200–600 警示 */
+    #EAF3EE 33.3%, #EAF3EE 100%);     /* 600–1800 正常 */
+  position: relative;
+  margin-top: 0.4rem;
+}
+.psi-bar-marker {
+  position: absolute;
+  top: -5px;
+  width: 4px;
+  height: 24px;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: left var(--transition);
+}
+.psi-bar-labels {
+  display: flex; justify-content: space-between;
+  font-size: 0.7rem; color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 0.3rem;
+}
+/* 對照表 */
+.ref-table { font-size: 0.9rem; }
+.ref-table th, .ref-table td {
+  text-align: center;
+  vertical-align: middle;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0.5rem 0.3rem;
+}
+.ref-table thead th {
+  position: sticky; top: 0;
+  background: #C9DAF0;
+  color: #1F3A5F;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 700;
+  z-index: 2;
+}
+.ref-table .row-full  td { background: var(--full-bg); }
+.ref-table .row-warn  td { background: var(--warn-bg); }
+.ref-table .cell-danger { color: var(--danger); font-weight: 700; font-family: 'Noto Sans TC', sans-serif; font-size: 0.8rem; }
+.ref-table .row-current td { outline: 2px solid var(--accent); outline-offset: -2px; }
+.psi-col { font-weight: 700; color: #1F3A5F; }
+.row-warn .psi-col { color: var(--warning); }
+.table-wrap { max-height: 420px; overflow-y: auto; border-radius: var(--radius-input); border: 1px solid var(--border); }
+/* footer 與版本 */
+.guideline-footer {
+  font-size: 0.75rem; color: var(--text-muted);
+  text-align: center; padding: 1rem;
+}
+.alert-inline { font-size: 0.85rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 575px) {
+  .result-minutes { font-size: 2.6rem; }
+  .flow-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container py-4" style="max-width: 860px;">
+  <h1 class="mb-1">O2 小鋼瓶可用時間計算器</h1>
+  <p class="section-label mb-3">鋼瓶規格：0.5 立方米（水容積 3.4 L）</p>
+
+  <div class="alert alert-danger alert-inline" id="errMsg" role="alert" hidden></div>
+
+  <div class="row g-3">
+    <!-- 左：輸入 -->
+    <div class="col-md-6">
+      <div class="tool-card">
+        <div class="section-label">① 錶壓 (psi)</div>
+        <input type="number" class="psi-input mb-2" id="psiInput"
+               inputmode="numeric" min="0" max="2200" step="50" value="1500"
+               aria-label="錶壓 psi">
+        <input type="range" id="psiSlider" min="0" max="1800" step="50" value="1500"
+               aria-label="錶壓滑桿">
+        <div class="psi-bar-track" aria-hidden="true">
+          <div class="psi-bar-marker" id="psiMarker"></div>
+        </div>
+        <div class="psi-bar-labels">
+          <span>0</span><span>200<br>殘壓</span><span>600<br>換瓶線</span><span>1800<br>滿桶</span>
+        </div>
+
+        <div class="section-label mt-4">② 氧氣流量 (L/min)</div>
+        <div class="flow-grid" id="flowGrid" role="group" aria-label="流量選擇">
+          <button type="button" class="flow-btn" data-flow="2">2</button>
+          <button type="button" class="flow-btn" data-flow="3">3</button>
+          <button type="button" class="flow-btn" data-flow="4">4</button>
+          <button type="button" class="flow-btn active" data-flow="5">5</button>
+          <button type="button" class="flow-btn" data-flow="10">10</button>
+          <button type="button" class="flow-btn" data-flow="15">15</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：結果 -->
+    <div class="col-md-6">
+      <div class="tool-card h-100 d-flex flex-column justify-content-center">
+        <div class="section-label">③ 估算結果</div>
+        <div class="result-box idle" id="resultBox">
+          <div class="result-minutes" id="resultMinutes">—</div>
+          <div class="result-status" id="resultStatus">請輸入錶壓與流量</div>
+          <div class="result-detail" id="resultDetail"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 對照表 -->
+  <div class="tool-card mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="section-label mb-0">標準對照表（目前輸入列以框線標示）</div>
+      <button class="btn btn-sm btn-outline-secondary" type="button"
+              data-bs-toggle="collapse" data-bs-target="#refTableWrap"
+              style="min-height:44px; min-width:44px;">顯示 / 隱藏</button>
+    </div>
+    <div class="collapse show" id="refTableWrap">
+      <div class="table-wrap">
+        <table class="table table-sm mb-0 ref-table" id="refTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <footer class="guideline-footer">
+    公式：可用時間(分) = (錶壓 − 200 psi 安全殘壓) × 0.2313 ÷ 流量；無條件捨去。<br>
+    「請更新」= 可用時間不足 10 分鐘。600 psi（橘列）= 建議換瓶警示線。<br>
+    依波以耳定律估算；實際時間受流量錶誤差影響，僅供臨床參考，不可作為唯一依據。
+  </footer>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+'use strict';
+// ============================================================
+// O2 小鋼瓶可用時間計算器（3.4 L）
+// 公式單一事實來源 (CONFIG)
+// ============================================================
+const CONFIG = Object.freeze({
+  TANK_WATER_VOL_L: 3.4,
+  TANK_FACTOR: 3.4 / 14.7,        // 0.2313 L/psi
+  SAFETY_RESIDUAL_PSI: 200,
+  UPDATE_THRESHOLD_MIN: 10,
+  WARN_SWAP_PSI: 600,
+  FULL_PSI: 1800,
+  MAX_INPUT_PSI: 2200,            // 極端值上限（錶頭物理極限緩衝）
+  PRESSURES: [1800, 1500, 1200, 900, 600, 300, 150],
+  FLOWS: [15, 10, 5, 4, 3, 2]
+});
+
+// --- 核心計算（與紙本完全一致） ---
+function usableMin(psi, flow) {
+  const avail = (psi - CONFIG.SAFETY_RESIDUAL_PSI) * CONFIG.TANK_FACTOR;
+  if (avail <= 0) return null;
+  const m = Math.floor(avail / flow);
+  return m < CONFIG.UPDATE_THRESHOLD_MIN ? null : m;
+}
+
+// --- 狀態 ---
+let state = { psi: 1500, flow: 5 };
+
+// --- DOM ---
+const $psiInput   = document.getElementById('psiInput');
+const $psiSlider  = document.getElementById('psiSlider');
+const $psiMarker  = document.getElementById('psiMarker');
+const $flowGrid   = document.getElementById('flowGrid');
+const $resultBox  = document.getElementById('resultBox');
+const $resultMin  = document.getElementById('resultMinutes');
+const $resultSta  = document.getElementById('resultStatus');
+const $resultDet  = document.getElementById('resultDetail');
+const $errMsg     = document.getElementById('errMsg');
+const $refTable   = document.getElementById('refTable');
+
+function showError(msg) { $errMsg.textContent = msg; $errMsg.hidden = false; }
+function clearError()   { $errMsg.hidden = true; }
+
+// --- 輸入驗證（極端值處理） ---
+function validatePsi(raw) {
+  const v = Number(raw);
+  if (raw === '' || Number.isNaN(v)) return { ok: false, msg: '請輸入有效的錶壓數值' };
+  if (v < 0)  return { ok: false, msg: '錶壓不可為負值' };
+  if (v > CONFIG.MAX_INPUT_PSI) return { ok: false, msg: `錶壓超出合理範圍（最大 ${CONFIG.MAX_INPUT_PSI} psi），請確認錶頭讀值` };
+  return { ok: true, value: Math.round(v) };
+}
+
+// --- 結果渲染 ---
+function render() {
+  clearError();
+  const { psi, flow } = state;
+  const minutes = usableMin(psi, flow);
+
+  // 壓力指示條 marker（0–1800 線性）
+  const pct = Math.min(psi, CONFIG.FULL_PSI) / CONFIG.FULL_PSI * 100;
+  $psiMarker.style.left = `calc(${pct}% - 2px)`;
+
+  // 結果分級
+  $resultBox.className = 'result-box';
+  $resultMin.className = 'result-minutes';
+  if (minutes === null) {
+    $resultBox.classList.add('danger');
+    $resultMin.classList.add('danger');
+    $resultMin.textContent = '請更新';
+    $resultSta.textContent = psi <= CONFIG.SAFETY_RESIDUAL_PSI
+      ? '錶壓低於安全殘壓，立即更換鋼瓶'
+      : `可用時間不足 ${CONFIG.UPDATE_THRESHOLD_MIN} 分鐘，立即更換鋼瓶`;
+    $resultDet.textContent = `輸入：${psi} psi @ ${flow} L/min`;
+  } else {
+    const isWarn = psi <= CONFIG.WARN_SWAP_PSI;
+    $resultBox.classList.add(isWarn ? 'caution' : 'ok');
+    $resultMin.classList.add(isWarn ? 'caution' : 'ok');
+    $resultMin.textContent = `${minutes} 分`;
+    $resultSta.textContent = isWarn
+      ? '⚠ 已達建議換瓶線（≤600 psi），請安排更換'
+      : '可正常使用';
+    const hr = Math.floor(minutes / 60), mn = minutes % 60;
+    const hrTxt = hr > 0 ? `≈ ${hr} 小時 ${mn} 分｜` : '';
+    $resultDet.textContent = `${hrTxt}${psi} psi @ ${flow} L/min（已扣 ${CONFIG.SAFETY_RESIDUAL_PSI} psi 殘壓）`;
+  }
+
+  highlightTableRow();
+}
+
+// --- 對照表 ---
+function buildTable() {
+  const thead = `<thead><tr><th>錶壓<br>(psi)</th>${
+    CONFIG.FLOWS.map(f => `<th>${f} L/分</th>`).join('')
+  }</tr></thead>`;
+
+  const rows = CONFIG.PRESSURES.map(p => {
+    const cls = p === CONFIG.FULL_PSI ? 'row-full'
+              : p === CONFIG.WARN_SWAP_PSI ? 'row-warn' : '';
+    const psiLabel = p === CONFIG.WARN_SWAP_PSI
+      ? `${p}<br><small style="font-size:0.65rem;">建議換瓶</small>` : p;
+    const cells = CONFIG.FLOWS.map(f => {
+      const v = usableMin(p, f);
+      return v === null
+        ? `<td class="cell-danger">請更新</td>`
+        : `<td>${v} 分</td>`;
+    }).join('');
+    return `<tr class="${cls}" data-psi="${p}"><td class="psi-col">${psiLabel}</td>${cells}</tr>`;
+  }).join('');
+
+  $refTable.innerHTML = thead + `<tbody>${rows}</tbody>`;
+}
+
+function highlightTableRow() {
+  // 找最接近輸入值的標準列（向下取，<150 則不標）
+  const candidates = CONFIG.PRESSURES.filter(p => p <= state.psi);
+  const nearest = candidates.length ? Math.max(...candidates) : null;
+  $refTable.querySelectorAll('tbody tr').forEach(tr => {
+    tr.classList.toggle('row-current', Number(tr.dataset.psi) === nearest);
+  });
+}
+
+// --- 事件 ---
+$psiInput.addEventListener('input', () => {
+  const r = validatePsi($psiInput.value);
+  if (!r.ok) { showError(r.msg); return; }
+  state.psi = r.value;
+  $psiSlider.value = Math.min(r.value, CONFIG.FULL_PSI);
+  render();
+});
+
+$psiSlider.addEventListener('input', () => {
+  state.psi = Number($psiSlider.value);
+  $psiInput.value = state.psi;
+  render();
+});
+
+$flowGrid.addEventListener('click', e => {
+  const btn = e.target.closest('.flow-btn');
+  if (!btn) return;
+  $flowGrid.querySelectorAll('.flow-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.flow = Number(btn.dataset.flow);
+  render();
+});
+
+// --- init ---
+buildTable();
+render();
+</script>
+</body>
+</html>
