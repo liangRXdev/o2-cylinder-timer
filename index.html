@@ -61,6 +61,35 @@ h1 { font-size: 1.4rem; font-weight: 700; }
 input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; }
 /* 流量按鈕 */
 .flow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+/* 容積切換按鈕 */
+.vol-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.vol-btn {
+  min-height: 56px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--bg-card);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: var(--transition);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+}
+.vol-btn small {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.vol-btn:hover { border-color: var(--accent); }
+.vol-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.vol-btn.active small { color: rgba(255,255,255,0.85); }
 .flow-btn {
   min-height: 52px;
   border: 2px solid var(--border);
@@ -167,7 +196,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; 
 <body>
 <div class="container py-4" style="max-width: 860px;">
   <h1 class="mb-1">O2 小鋼瓶可用時間計算器</h1>
-  <p class="section-label mb-3">鋼瓶規格：0.5 立方米（水容積 3.4 L）</p>
+  <p class="section-label mb-3" id="tankDesc">鋼瓶規格：水容積 3.4 L｜0.5 立方米（病房／轉送）</p>
 
   <div class="alert alert-danger alert-inline" id="errMsg" role="alert" hidden></div>
 
@@ -175,7 +204,17 @@ input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; 
     <!-- 左：輸入 -->
     <div class="col-md-6">
       <div class="tool-card">
-        <div class="section-label">① 錶壓 (psi)</div>
+        <div class="section-label">① 鋼瓶容積</div>
+        <div class="vol-grid mb-2" id="volGrid" role="group" aria-label="鋼瓶容積選擇">
+          <button type="button" class="vol-btn active" data-vol="3.4">
+            3.4 L<small>病房／轉送</small>
+          </button>
+          <button type="button" class="vol-btn" data-vol="2.8">
+            2.8 L<small>救護車用</small>
+          </button>
+        </div>
+
+        <div class="section-label mt-4">② 錶壓 (psi)</div>
         <input type="number" class="psi-input mb-2" id="psiInput"
                inputmode="numeric" min="0" max="2200" step="50" value="1500"
                aria-label="錶壓 psi">
@@ -188,7 +227,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; 
           <span>0</span><span>200<br>殘壓</span><span>600<br>換瓶線</span><span>1800<br>滿桶</span>
         </div>
 
-        <div class="section-label mt-4">② 氧氣流量 (L/min)</div>
+        <div class="section-label mt-4">④ 氧氣流量 (L/min)</div>
         <div class="flow-grid" id="flowGrid" role="group" aria-label="流量選擇">
           <button type="button" class="flow-btn" data-flow="2">2</button>
           <button type="button" class="flow-btn" data-flow="3">3</button>
@@ -203,7 +242,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; 
     <!-- 右：結果 -->
     <div class="col-md-6">
       <div class="tool-card h-100 d-flex flex-column justify-content-center">
-        <div class="section-label">③ 估算結果</div>
+        <div class="section-label">估算結果</div>
         <div class="result-box idle" id="resultBox">
           <div class="result-minutes" id="resultMinutes">—</div>
           <div class="result-status" id="resultStatus">請輸入錶壓與流量</div>
@@ -216,7 +255,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; 
   <!-- 對照表 -->
   <div class="tool-card mt-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <div class="section-label mb-0">標準對照表（目前輸入列以框線標示）</div>
+      <div class="section-label mb-0" id="refTableLabel">標準對照表（目前輸入列以框線標示）</div>
       <button class="btn btn-sm btn-outline-secondary" type="button"
               data-bs-toggle="collapse" data-bs-target="#refTableWrap"
               style="min-height:44px; min-width:44px;">顯示 / 隱藏</button>
@@ -228,7 +267,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; 
     </div>
   </div>
 
-  <footer class="guideline-footer">
+  <footer class="guideline-footer" id="footerNote">
     公式：可用時間(分) = (錶壓 − 200 psi 安全殘壓) × 0.2313 ÷ 流量；無條件捨去。<br>
     「請更新」= 可用時間不足 10 分鐘。600 psi（橘列）= 建議換瓶警示線。<br>
     依波以耳定律估算；實際時間受流量錶誤差影響，僅供臨床參考，不可作為唯一依據。
@@ -243,9 +282,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; 
 // O2 小鋼瓶可用時間計算器（3.4 L）
 // 公式單一事實來源 (CONFIG)
 // ============================================================
+// 共用政策參數（與容積無關，單一事實來源）
 const CONFIG = Object.freeze({
-  TANK_WATER_VOL_L: 3.4,
-  TANK_FACTOR: 3.4 / 14.7,        // 0.2313 L/psi
   SAFETY_RESIDUAL_PSI: 200,
   UPDATE_THRESHOLD_MIN: 10,
   WARN_SWAP_PSI: 600,
@@ -255,16 +293,23 @@ const CONFIG = Object.freeze({
   FLOWS: [15, 10, 5, 4, 3, 2]
 });
 
+// 可切換的鋼瓶容積（水容積 L）；factor 由容積自動推導
+const TANKS = Object.freeze({
+  '3.4': { vol: 3.4, label: '3.4 L', desc: '0.5 立方米（病房／轉送）' },
+  '2.8': { vol: 2.8, label: '2.8 L', desc: '救護車用' }
+});
+
 // --- 核心計算（與紙本完全一致） ---
 function usableMin(psi, flow) {
-  const avail = (psi - CONFIG.SAFETY_RESIDUAL_PSI) * CONFIG.TANK_FACTOR;
+  const factor = state.vol / 14.7;
+  const avail = (psi - CONFIG.SAFETY_RESIDUAL_PSI) * factor;
   if (avail <= 0) return null;
   const m = Math.floor(avail / flow);
   return m < CONFIG.UPDATE_THRESHOLD_MIN ? null : m;
 }
 
 // --- 狀態 ---
-let state = { psi: 1500, flow: 5 };
+let state = { psi: 1500, flow: 5, vol: 3.4 };
 
 // --- DOM ---
 const $psiInput   = document.getElementById('psiInput');
@@ -277,6 +322,10 @@ const $resultSta  = document.getElementById('resultStatus');
 const $resultDet  = document.getElementById('resultDetail');
 const $errMsg     = document.getElementById('errMsg');
 const $refTable   = document.getElementById('refTable');
+const $volGrid    = document.getElementById('volGrid');
+const $tankDesc   = document.getElementById('tankDesc');
+const $refLabel   = document.getElementById('refTableLabel');
+const $footerNote = document.getElementById('footerNote');
 
 function showError(msg) { $errMsg.textContent = msg; $errMsg.hidden = false; }
 function clearError()   { $errMsg.hidden = true; }
@@ -383,7 +432,32 @@ $flowGrid.addEventListener('click', e => {
   render();
 });
 
+$volGrid.addEventListener('click', e => {
+  const btn = e.target.closest('.vol-btn');
+  if (!btn) return;
+  $volGrid.querySelectorAll('.vol-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.vol = Number(btn.dataset.vol);
+  syncTankText();
+  buildTable();   // 容積改變→重建對照表數值
+  render();
+});
+
+// 依目前容積更新頁面文字（規格說明、對照表標題、公式係數）
+function syncTankText() {
+  const key  = String(state.vol);
+  const info = TANKS[key];
+  const factor = (state.vol / 14.7).toFixed(4);
+  $tankDesc.textContent = `鋼瓶規格：水容積 ${info.label}｜${info.desc}`;
+  $refLabel.textContent = `標準對照表（${info.label}，目前輸入列以框線標示）`;
+  $footerNote.innerHTML =
+    `公式：可用時間(分) = (錶壓 − ${CONFIG.SAFETY_RESIDUAL_PSI} psi 安全殘壓) × ${factor} ÷ 流量；無條件捨去。<br>` +
+    `「請更新」= 可用時間不足 ${CONFIG.UPDATE_THRESHOLD_MIN} 分鐘。${CONFIG.WARN_SWAP_PSI} psi（橘列）= 建議換瓶警示線。<br>` +
+    `依波以耳定律估算；實際時間受流量錶誤差影響，僅供臨床參考，不可作為唯一依據。`;
+}
+
 // --- init ---
+syncTankText();
 buildTable();
 render();
 </script>
