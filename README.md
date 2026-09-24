@@ -1,187 +1,189 @@
 # o2-cylinder-timer
 
-適用於攜帶式醫用氧氣小鋼瓶的**可用時間估算工具**，支援多種鋼瓶容積切換。
-單一 HTML 檔案，無需後端，適合部署於 GitHub Pages 供護理站、轉送或救護車使用。
+**English** | [繁體中文](README.zh-TW.md)
+
+A **remaining-time estimator for portable medical oxygen cylinders**, with switchable cylinder sizes.
+A single HTML file with no backend, suited to GitHub Pages deployment for nursing stations, patient transport or ambulances. The interface is in Traditional Chinese.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Click%20Here-blue?style=for-the-badge)](https://liangrxdev.github.io/o2-cylinder-timer/)
 ---
 
-## 支援鋼瓶規格
+## Supported Cylinders
 
-| 容積 | 規格 | 適用情境 |
+| Water volume | Type | Use case |
 |---|---|---|
-| **3.4 L**（0.5 m³） | 醫院護理站常備小鋼瓶 | 病房、手術室轉送 |
-| **2.8 L**（0.4 m³） | 救護車攜帶型鋼瓶 | 院前救護、長途轉送 |
+| **3.4 L** (0.5 m³) | Small cylinder stocked at hospital nursing stations | Ward and OR transport |
+| **2.8 L** (0.4 m³) | Portable ambulance cylinder | Prehospital care, long-distance transport |
 
-介面切換後，結果、對照表數值與公式係數全部即時同步更新。
-
----
-
-## 使用情境
-
-- 病人轉送前評估小鋼瓶是否足夠撐到目的地
-- 救護車出勤前確認車載氧氣存量
-- 護理站快速核對目前錶壓在特定流量下的剩餘時間
-- 取代護貝卡的數位查詢介面
-
-所有計算在瀏覽器本地完成，不傳送任何資料至伺服器。
+After switching, the result, reference-table values and formula coefficient all update instantly.
 
 ---
 
-## 計算公式
+## Use Cases
+
+- Before transporting a patient, check whether the small cylinder will last until the destination
+- Confirm onboard oxygen before an ambulance run
+- Quickly check at the nursing station how long the current gauge pressure lasts at a given flow
+- A digital replacement for laminated reference cards
+
+All calculation happens locally in the browser; no data is sent to any server.
+
+---
+
+## Formula
 
 ```
-可用時間（分）= ⌊ (錶壓 − 200 psi) × (水容積 ÷ 14.7) ÷ 流量 ⌋
+Available time (min) = ⌊ (gauge pressure − 200 psi) × (water volume ÷ 14.7) ÷ flow ⌋
 ```
 
-| 參數 | 3.4 L 版 | 2.8 L 版 | 依據 |
+| Parameter | 3.4 L version | 2.8 L version | Basis |
 |---|---|---|---|
-| 換算係數 | 3.4 ÷ 14.7 = **0.2313** L/psi | 2.8 ÷ 14.7 = **0.1905** L/psi | 波以耳定律；1 kg/cm² = 14.7 psi |
-| 安全殘壓 | **200 psi**（兩版相同） | **200 psi** | 詳見下方說明 |
-| 取整方式 | 無條件捨去（floor） | 無條件捨去 | 保守方向 |
-| 「請更新」門檻 | 可用時間 < 10 分鐘 | 可用時間 < 10 分鐘 | 臨床操作安全餘裕 |
-| 換瓶警示線 | ≤ 600 psi | ≤ 600 psi | 行政換瓶門檻，不影響計算 |
+| Conversion factor | 3.4 ÷ 14.7 = **0.2313** L/psi | 2.8 ÷ 14.7 = **0.1905** L/psi | Boyle's law; 1 kg/cm² = 14.7 psi |
+| Safety residual pressure | **200 psi** (same for both) | **200 psi** | See explanation below |
+| Rounding | Floor (round down) | Floor (round down) | Conservative direction |
+| "Please replace" threshold | Available time < 10 minutes | Available time < 10 minutes | Clinical safety margin |
+| Swap warning line | ≤ 600 psi | ≤ 600 psi | Administrative swap threshold; doesn't affect calculation |
 
-> **注意：** 2.8 L 鋼瓶在同壓力下的可用時間比 3.4 L 少約 18%（容積比 2.8/3.4）。
-> 例如 900 psi @ 15 L/min，3.4 L 仍有 10 分鐘；2.8 L 直接顯示「請更新」。
-> 救護車高流量情境下這個差異尤其需要注意。
+> **Note:** At the same pressure, a 2.8 L cylinder lasts about 18% less than a 3.4 L one (volume ratio 2.8/3.4).
+> For example, at 900 psi @ 15 L/min a 3.4 L cylinder still has 10 minutes, while a 2.8 L cylinder shows "please replace" straight away.
+> This difference matters especially at the high flows used in ambulances.
 
 ---
 
-## 為何安全殘壓設為 200 psi？
+## Why is the safety residual pressure 200 psi?
 
-安全殘壓在計算前從錶壓中扣除，代表這段壓力所對應的氣體**完全不計入可用時間**。這是刻意的設計，理由如下：
+The safety residual is subtracted from the gauge pressure before calculating, meaning the gas corresponding to that pressure is **not counted as available time at all**. This is deliberate, for the following reasons:
 
-### 一、低壓段是轉送情境的最高風險區
+### 1. The low-pressure range is the highest-risk zone during transport
 
-轉送途中無法臨時換瓶。若鋼瓶在途中耗盡，病人將立即面臨缺氧風險。殘壓必須能覆蓋：
+You can't swap cylinders mid-transport. If the cylinder runs out on the way, the patient faces immediate hypoxia. The residual must cover:
 
-- 流量計讀值誤差（一般 ±5–10%）
-- 調壓器洩壓死區
-- 發現低壓到完成換瓶所需的人員反應時間
+- Flowmeter reading error (typically ±5–10%)
+- Regulator relief dead zone
+- Staff reaction time from noticing low pressure to completing a swap
 
-### 二、與「常數打折法」的比較
+### 2. Comparison with the "constant discount" method
 
-部分醫療機構採用**常數打折法**（將換算係數乘以固定折扣，不扣殘壓），
-例如：
+Some institutions use a **constant discount method** (multiplying the conversion factor by a fixed discount without subtracting a residual),
+for example:
 
 ```
-打折公式：可用時間 = P × 0.185 ÷ 流量
-         （即 0.8 × 3.4/14.7，不扣固定殘壓）
+Discount formula: available time = P × 0.185 ÷ flow
+                  (i.e. 0.8 × 3.4/14.7, no fixed residual subtracted)
 ```
 
-逆推這個公式所隱含的等效殘壓：
+Back-calculating the equivalent residual implied by this formula:
 
 ```
 P × 0.185 = (P − R) × 0.2313
-R = P × 0.200   ← 隨壓力等比縮放，非固定值
+R = P × 0.200   ← scales proportionally with pressure, not a fixed value
 ```
 
-| 錶壓 | 打折法隱含殘壓 | 本工具（固定 200 psi） | 較保守者 |
+| Gauge pressure | Residual implied by discount method | This tool (fixed 200 psi) | More conservative |
 |---|---|---|---|
-| 1800 psi | 360 psi | 200 psi | 打折法 |
-| 1500 psi | 300 psi | 200 psi | 打折法 |
-| 1200 psi | 240 psi | 200 psi | 打折法 |
-| **1000 psi** | **200 psi** | **200 psi** | **相同** |
-| 900 psi | 180 psi | 200 psi | **本工具** |
-| 600 psi | 120 psi | 200 psi | **本工具** |
+| 1800 psi | 360 psi | 200 psi | Discount method |
+| 1500 psi | 300 psi | 200 psi | Discount method |
+| 1200 psi | 240 psi | 200 psi | Discount method |
+| **1000 psi** | **200 psi** | **200 psi** | **Same** |
+| 900 psi | 180 psi | 200 psi | **This tool** |
+| 600 psi | 120 psi | 200 psi | **This tool** |
 
-兩種方法的**交叉點約在 1000 psi**。高壓段打折法較保守；低壓段本工具較保守。
+The two methods **cross at about 1000 psi**. The discount method is more conservative at high pressure; this tool is more conservative at low pressure.
 
-由於攜帶式小鋼瓶最危險的時刻正是壓力偏低、無法即時換瓶的轉送途中，
-**固定殘壓設計在臨床風險最高的低壓區提供了更強的保護**，因此採用此設計。
+Because the most dangerous moment for a portable cylinder is exactly during transport at low pressure with no chance to swap,
+**a fixed residual gives stronger protection in the low-pressure zone where clinical risk is highest**, which is why this design was chosen.
 
-### 三、符合呼吸治療常見慣例
+### 3. Consistent with common respiratory therapy practice
 
-固定殘壓 150–200 psi（約 10–14 kg/cm²）為氧氣鋼瓶管理文獻中常見的最低使用壓力建議值。
+A fixed residual of 150–200 psi (about 10–14 kg/cm²) is a commonly recommended minimum working pressure in the oxygen cylinder management literature.
 
-> **備註：** 工具介面上顯示的 600 psi 換瓶警示線屬於**行政管理層次的換瓶門檻**（提示護理人員安排補換），與公式計算無關，不應混淆。
-
----
-
-## 功能說明
-
-- **容積切換**：頂部兩顆按鈕（3.4 L 病房／轉送 ／ 2.8 L 救護車），切換後全頁即時更新
-- **錶壓輸入**：數字欄位與滑桿雙向同步，下方三色壓力指示條即時顯示目前位置
-- **流量選擇**：6 顆按鈕（2 / 3 / 4 / 5 / 10 / 15 L/min），觸控友善
-- **結果三態**：綠色（正常）/ 橘色（≤ 600 psi 建議換瓶）/ 紅色（請立即更換）
-- **標準對照表**：內嵌於頁面下方，隨容積切換自動重算，目前輸入對應列自動框線標示，可摺疊
-- **完全離線可用**：純靜態單檔，僅引用 CDN Bootstrap 與 Google Fonts
+> **Note:** The 600 psi swap warning line shown in the interface is an **administrative swap threshold** (prompting nurses to arrange a replacement) and is unrelated to the formula; don't confuse the two.
 
 ---
 
-## 部署至 GitHub Pages
+## Features
+
+- **Volume switch**: two buttons at the top (3.4 L ward / transport, 2.8 L ambulance); the whole page updates instantly
+- **Gauge pressure input**: number field and slider stay in sync, with a three-color pressure bar below showing the current position
+- **Flow selection**: 6 buttons (2 / 3 / 4 / 5 / 10 / 15 L/min), touch-friendly
+- **Three result states**: green (normal) / orange (≤ 600 psi, swap recommended) / red (replace now)
+- **Standard reference table**: embedded at the bottom, recalculated on volume switch, with the row matching the current input outlined; collapsible
+- **Works fully offline**: a pure static single file, referencing only CDN Bootstrap and Google Fonts
+
+---
+
+## Deploy to GitHub Pages
 
 ```bash
 git clone https://github.com/<your-username>/o2-cylinder-timer.git
 cd o2-cylinder-timer
-# 將 index.html 放入 repo 根目錄
+# Put index.html in the repo root
 git add index.html README.md
 git commit -m "feat: add 2.8L ambulance cylinder support"
 git push origin main
 ```
 
-接著至 **GitHub repo → Settings → Pages → Branch: `main` / `/ (root)`**，
-部署完成後可於 `https://<your-username>.github.io/o2-cylinder-timer/` 存取。
+Then go to **GitHub repo → Settings → Pages → Branch: `main` / `/ (root)`**;
+once deployed it is available at `https://<your-username>.github.io/o2-cylinder-timer/`.
 
 ---
 
-## 修改公式參數
+## Changing Formula Parameters
 
-共用政策參數（殘壓、門檻、壓力刻度）集中於 `CONFIG`；容積規格定義於 `TANKS`，係數由容積自動推導，**兩者分層管理，單一事實來源**。
+Shared policy parameters (residual, thresholds, pressure scale) are centralized in `CONFIG`; cylinder volumes are defined in `TANKS`, with coefficients derived automatically from the volume — **managed in two layers, each a single source of truth**.
 
 ```javascript
-// 共用政策參數（與容積無關）
+// Shared policy parameters (independent of volume)
 const CONFIG = Object.freeze({
-  SAFETY_RESIDUAL_PSI: 200,        // 安全殘壓（psi）
-  UPDATE_THRESHOLD_MIN: 10,        // 「請更新」門檻（分鐘）
-  WARN_SWAP_PSI: 600,              // 換瓶警示線（psi）
-  FULL_PSI: 1800,                  // 滿桶參考壓力
-  MAX_INPUT_PSI: 2200,             // 輸入驗證上限
+  SAFETY_RESIDUAL_PSI: 200,        // safety residual pressure (psi)
+  UPDATE_THRESHOLD_MIN: 10,        // "please replace" threshold (minutes)
+  WARN_SWAP_PSI: 600,              // swap warning line (psi)
+  FULL_PSI: 1800,                  // full-cylinder reference pressure
+  MAX_INPUT_PSI: 2200,             // input validation upper limit
   PRESSURES: [1800,1500,1200,900,600,300,150],
   FLOWS: [15, 10, 5, 4, 3, 2],
 });
 
-// 可切換的鋼瓶容積（新增容積：加一筆 + HTML 加一顆按鈕）
+// Switchable cylinder volumes (to add a volume: add an entry + one HTML button)
 const TANKS = Object.freeze({
   '3.4': { vol: 3.4, label: '3.4 L', desc: '0.5 立方米（病房／轉送）' },
   '2.8': { vol: 2.8, label: '2.8 L', desc: '救護車用' }
 });
 ```
 
-**新增其他容積**：於 `TANKS` 加一筆、HTML 加一顆 `vol-btn`，計算邏輯完全不用動。  
-**調整殘壓政策**：修改 `SAFETY_RESIDUAL_PSI`，並於 git commit message 記錄修改理由以利稽核。
+**Adding another volume**: add an entry to `TANKS` and a `vol-btn` in the HTML; the calculation logic needs no changes.  
+**Changing the residual policy**: edit `SAFETY_RESIDUAL_PSI` and record the reason in the git commit message for auditability.
 
 ---
 
-## 與紙本對照表驗證
+## Verification Against the Paper Reference Table
 
-工具輸出與標準紙本對照表（floor 取整，容許誤差 ±0 分）完全吻合：
+Tool output matches the standard paper reference table exactly (floor rounding, tolerance ±0 minutes):
 
 **3.4 L**
 
-| 錶壓 | 流量 | 紙本 | 工具 |
+| Gauge pressure | Flow | Paper | Tool |
 |---|---|---|---|
-| 1800 psi | 5 L/min | 74 分 | 74 分 ✓ |
-| 1500 psi | 3 L/min | 100 分 | 100 分 ✓ |
-| 900 psi | 15 L/min | 10 分 | 10 分 ✓ |
-| 600 psi | 5 L/min | 18 分 | 18 分 ✓ |
+| 1800 psi | 5 L/min | 74 min | 74 min ✓ |
+| 1500 psi | 3 L/min | 100 min | 100 min ✓ |
+| 900 psi | 15 L/min | 10 min | 10 min ✓ |
+| 600 psi | 5 L/min | 18 min | 18 min ✓ |
 
 **2.8 L**
 
-| 錶壓 | 流量 | 計算值 | 工具 |
+| Gauge pressure | Flow | Calculated | Tool |
 |---|---|---|---|
-| 1800 psi | 5 L/min | 60 分 | 60 分 ✓ |
-| 1500 psi | 2 L/min | 123 分 | 123 分 ✓ |
-| 900 psi | 15 L/min | 請更新 | 請更新 ✓ |
-| 600 psi | 5 L/min | 15 分 | 15 分 ✓ |
+| 1800 psi | 5 L/min | 60 min | 60 min ✓ |
+| 1500 psi | 2 L/min | 123 min | 123 min ✓ |
+| 900 psi | 15 L/min | Please replace | Please replace ✓ |
+| 600 psi | 5 L/min | 15 min | 15 min ✓ |
 
 ---
 
-## 免責聲明
+## Disclaimer
 
-本工具僅作為臨床參考輔助，實際可用時間受流量計誤差、調壓器公差及環境因素影響。
-不得作為病人照護決策的唯一依據，使用時應遵循所在機構的醫用氣體管理規範。
+This tool is only a clinical reference aid; actual available time is affected by flowmeter error, regulator tolerance and environmental factors.
+It must not be the sole basis for patient-care decisions; follow your institution's medical gas management policies.
 
 ---
 
