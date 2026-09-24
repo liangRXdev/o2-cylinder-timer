@@ -38,7 +38,7 @@ Available time (min) = ⌊ (gauge pressure − 200 psi) × (water volume ÷ 14.7
 
 | Parameter | 3.4 L version | 2.8 L version | Basis |
 |---|---|---|---|
-| Conversion factor | 3.4 ÷ 14.7 = **0.2313** L/psi | 2.8 ÷ 14.7 = **0.1905** L/psi | Boyle's law; 1 kg/cm² = 14.7 psi |
+| Conversion factor | 3.4 ÷ 14.7 = **0.2313** L/psi | 2.8 ÷ 14.7 = **0.1905** L/psi | Boyle's law; 1 atm = 14.7 psi |
 | Safety residual pressure | **200 psi** (same for both) | **200 psi** | See explanation below |
 | Rounding | Floor (round down) | Floor (round down) | Conservative direction |
 | "Please replace" threshold | Available time < 10 minutes | Available time < 10 minutes | Clinical safety margin |
