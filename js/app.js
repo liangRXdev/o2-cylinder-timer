@@ -69,7 +69,7 @@
         $resultMin.classList.add('danger');
         $resultMin.textContent = '請更新';
         $resultSta.textContent = psi <= CONFIG.SAFETY_RESIDUAL_PSI
-          ? '錶壓低於安全殘壓，立即更換鋼瓶'
+          ? `錶壓已達安全殘壓（≤ ${CONFIG.SAFETY_RESIDUAL_PSI} psi），立即更換鋼瓶`
           : `可用時間不足 ${CONFIG.UPDATE_THRESHOLD_MIN} 分鐘，立即更換鋼瓶`;
         $resultDet.textContent = `輸入：${psi} psi @ ${flow} L/min`;
       } else {

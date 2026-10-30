@@ -180,3 +180,16 @@ test('初始化與 pageshow 讀取輸入框現值（瀏覽器還原表單時，�
   assert.equal(bad.view().minutes, '—');
   assert.ok(bad.view().err);
 });
+
+test('殘壓分界：剛好 200 為「已達」殘壓，略高於 200 為「不足 10 分鐘」', () => {
+  const { doc, view } = setup();
+  ui.typePsi(doc, 200);
+  assert.equal(view().minutes, '請更新');
+  assert.equal(view().status, '錶壓已達安全殘壓（≤ 200 psi），立即更換鋼瓶');
+  ui.typePsi(doc, 0);
+  assert.equal(view().status, '錶壓已達安全殘壓（≤ 200 psi），立即更換鋼瓶');
+  ui.typePsi(doc, '200.5');
+  assert.equal(view().minutes, '請更新');
+  assert.equal(view().status, '可用時間不足 10 分鐘，立即更換鋼瓶');
+  assert.match(view().detail, /200\.5 psi/);
+});
