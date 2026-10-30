@@ -3,7 +3,7 @@
 **English** | [繁體中文](README.zh-TW.md)
 
 A **remaining-time estimator for portable medical oxygen cylinders**, with switchable cylinder sizes.
-A single HTML file with no backend, suited to GitHub Pages deployment for nursing stations, patient transport or ambulances. The interface is in Traditional Chinese.
+A static site (`index.html` + `js/`) with no backend and no build step, suited to GitHub Pages deployment for nursing stations, patient transport or ambulances. The interface is in Traditional Chinese.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Click%20Here-blue?style=for-the-badge)](https://liangrxdev.github.io/o2-cylinder-timer/)
 ---
@@ -108,7 +108,7 @@ A fixed residual of 150–200 psi (about 10–14 kg/cm²) is a commonly recommen
 - **Flow selection**: 6 buttons (2 / 3 / 4 / 5 / 10 / 15 L/min), touch-friendly
 - **Three result states**: green (normal) / orange (≤ 600 psi, swap recommended) / red (replace now)
 - **Standard reference table**: embedded at the bottom, recalculated on volume switch, with the row matching the current input outlined; collapsible
-- **Works fully offline**: a pure static single file, referencing only CDN Bootstrap and Google Fonts
+- **Calculation needs no network**: calculation and validation run locally in the browser; layout styles (Bootstrap) and fonts load from CDNs, so offline the page looks plainer but still calculates
 
 ---
 
@@ -117,8 +117,8 @@ A fixed residual of 150–200 psi (about 10–14 kg/cm²) is a commonly recommen
 ```bash
 git clone https://github.com/<your-username>/o2-cylinder-timer.git
 cd o2-cylinder-timer
-# Put index.html in the repo root
-git add index.html README.md
+# index.html, favicon.svg and js/ must sit together in the repo root
+git add index.html favicon.svg js/ README.md
 git commit -m "feat: add 2.8L ambulance cylinder support"
 git push origin main
 ```
@@ -130,7 +130,7 @@ once deployed it is available at `https://<your-username>.github.io/o2-cylinder-
 
 ## Changing Formula Parameters
 
-Shared policy parameters (residual, thresholds, pressure scale) are centralized in `CONFIG`; cylinder volumes are defined in `TANKS`, with coefficients derived automatically from the volume — **managed in two layers, each a single source of truth**.
+Everything lives in `js/calc.js`. Shared policy parameters (residual, thresholds, pressure scale) are centralized in `CONFIG`; cylinder volumes are defined in `TANKS`, with coefficients derived automatically from the volume — **managed in two layers, each a single source of truth**.
 
 ```javascript
 // Shared policy parameters (independent of volume)
@@ -140,6 +140,7 @@ const CONFIG = Object.freeze({
   WARN_SWAP_PSI: 600,              // swap warning line (psi)
   FULL_PSI: 1800,                  // full-cylinder reference pressure
   MAX_INPUT_PSI: 2200,             // input validation upper limit
+  PSI_PER_ATM: 14.7,               // 1 atm = 14.7 psi
   PRESSURES: [1800,1500,1200,900,600,300,150],
   FLOWS: [15, 10, 5, 4, 3, 2],
 });
@@ -151,8 +152,18 @@ const TANKS = Object.freeze({
 });
 ```
 
-**Adding another volume**: add an entry to `TANKS` and a `vol-btn` in the HTML; the calculation logic needs no changes.  
+**Adding another volume**: add an entry to `TANKS` and a `vol-btn` in the HTML; the calculation logic needs no changes (the `TANKS` key must equal `String(vol)`, e.g. `'3'` not `'3.0'`, and match `data-vol`).  
 **Changing the residual policy**: edit `SAFETY_RESIDUAL_PSI` and record the reason in the git commit message for auditability.
+
+---
+
+## Tests
+
+```bash
+node --test
+```
+
+Built-in Node (≥ 18) test runner; nothing to install. `tests/calc.test.js` locks the full reference table for both volumes plus hand-worked examples; `tests/app.test.js` checks UI syncing and edge-case inputs against a minimal fake DOM.
 
 ---
 

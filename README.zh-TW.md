@@ -3,7 +3,7 @@
 [English](README.md) | **繁體中文**
 
 適用於攜帶式醫用氧氣小鋼瓶的**可用時間估算工具**，支援多種鋼瓶容積切換。
-單一 HTML 檔案，無需後端，適合部署於 GitHub Pages 供護理站、轉送或救護車使用。
+純靜態網頁（`index.html` + `js/`），無需後端、無建置步驟，適合部署於 GitHub Pages 供護理站、轉送或救護車使用。
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Click%20Here-blue?style=for-the-badge)](https://liangrxdev.github.io/o2-cylinder-timer/)
 ---
@@ -108,7 +108,7 @@ R = P × 0.200   ← 隨壓力等比縮放，非固定值
 - **流量選擇**：6 顆按鈕（2 / 3 / 4 / 5 / 10 / 15 L/min），觸控友善
 - **結果三態**：綠色（正常）/ 橘色（≤ 600 psi 建議換瓶）/ 紅色（請立即更換）
 - **標準對照表**：內嵌於頁面下方，隨容積切換自動重算，目前輸入對應列自動框線標示，可摺疊
-- **完全離線可用**：純靜態單檔，僅引用 CDN Bootstrap 與 Google Fonts
+- **計算不需網路**：計算與驗證全在瀏覽器本機執行；版面樣式（Bootstrap）與字型由 CDN 載入，離線時樣式會退化但計算照常
 
 ---
 
@@ -117,8 +117,8 @@ R = P × 0.200   ← 隨壓力等比縮放，非固定值
 ```bash
 git clone https://github.com/<your-username>/o2-cylinder-timer.git
 cd o2-cylinder-timer
-# 將 index.html 放入 repo 根目錄
-git add index.html README.md
+# index.html、favicon.svg 與 js/ 需一併放在 repo 根目錄
+git add index.html favicon.svg js/ README.md
 git commit -m "feat: add 2.8L ambulance cylinder support"
 git push origin main
 ```
@@ -130,7 +130,7 @@ git push origin main
 
 ## 修改公式參數
 
-共用政策參數（殘壓、門檻、壓力刻度）集中於 `CONFIG`；容積規格定義於 `TANKS`，係數由容積自動推導，**兩者分層管理，單一事實來源**。
+全部位於 `js/calc.js`。共用政策參數（殘壓、門檻、壓力刻度）集中於 `CONFIG`；容積規格定義於 `TANKS`，係數由容積自動推導，**兩者分層管理，單一事實來源**。
 
 ```javascript
 // 共用政策參數（與容積無關）
@@ -140,6 +140,7 @@ const CONFIG = Object.freeze({
   WARN_SWAP_PSI: 600,              // 換瓶警示線（psi）
   FULL_PSI: 1800,                  // 滿桶參考壓力
   MAX_INPUT_PSI: 2200,             // 輸入驗證上限
+  PSI_PER_ATM: 14.7,               // 1 atm = 14.7 psi
   PRESSURES: [1800,1500,1200,900,600,300,150],
   FLOWS: [15, 10, 5, 4, 3, 2],
 });
@@ -151,8 +152,18 @@ const TANKS = Object.freeze({
 });
 ```
 
-**新增其他容積**：於 `TANKS` 加一筆、HTML 加一顆 `vol-btn`，計算邏輯完全不用動。  
+**新增其他容積**：於 `TANKS` 加一筆、HTML 加一顆 `vol-btn`，計算邏輯完全不用動（`TANKS` 的 key 須等於 `String(vol)`，例如 `'3'` 而非 `'3.0'`，且 `data-vol` 同值）。  
 **調整殘壓政策**：修改 `SAFETY_RESIDUAL_PSI`，並於 git commit message 記錄修改理由以利稽核。
+
+---
+
+## 測試
+
+```bash
+node --test
+```
+
+純 Node（≥ 18）內建測試，無需安裝套件。`tests/calc.test.js` 鎖住兩種容積的完整對照表與手算例；`tests/app.test.js` 以最小假 DOM 驗證畫面同步與極端值。
 
 ---
 
