@@ -17,7 +17,8 @@
     const { CONFIG, TANKS, usableMin, validatePsi } = calc;
 
     // --- 狀態 ---
-    let state = { psi: 1500, flow: 5, vol: 3.4 };
+    // psiError 非 null 時 psi 視為無效：結果區回到 idle，不沿用前一次數值
+    let state = { psi: 1500, psiError: null, flow: 5, vol: 3.4 };
 
     // --- DOM ---
     const $psiInput   = doc.getElementById('psiInput');
@@ -40,17 +41,29 @@
 
     // --- 結果渲染 ---
     function render() {
-      clearError();
       const { psi, flow } = state;
+
+      // 結果分級
+      $resultBox.className = 'result-box';
+      $resultMin.className = 'result-minutes';
+      if (state.psiError) {
+        showError(state.psiError);
+        $psiMarker.style.visibility = 'hidden';
+        $resultBox.classList.add('idle');
+        $resultMin.textContent = '—';
+        $resultSta.textContent = '請輸入有效的錶壓';
+        $resultDet.textContent = '';
+        highlightTableRow();
+        return;
+      }
+      clearError();
       const minutes = usableMin(psi, flow, state.vol);
 
       // 壓力指示條 marker（0–1800 線性）
       const pct = Math.min(psi, CONFIG.FULL_PSI) / CONFIG.FULL_PSI * 100;
       $psiMarker.style.left = `calc(${pct}% - 2px)`;
+      $psiMarker.style.visibility = '';
 
-      // 結果分級
-      $resultBox.className = 'result-box';
-      $resultMin.className = 'result-minutes';
       if (minutes === null) {
         $resultBox.classList.add('danger');
         $resultMin.classList.add('danger');
@@ -100,7 +113,7 @@
 
     function highlightTableRow() {
       // 找最接近輸入值的標準列（向下取，<150 則不標）
-      const candidates = CONFIG.PRESSURES.filter(p => p <= state.psi);
+      const candidates = state.psiError ? [] : CONFIG.PRESSURES.filter(p => p <= state.psi);
       const nearest = candidates.length ? Math.max(...candidates) : null;
       $refTable.querySelectorAll('tbody tr').forEach(tr => {
         tr.classList.toggle('row-current', Number(tr.dataset.psi) === nearest);
@@ -110,7 +123,8 @@
     // --- 事件 ---
     $psiInput.addEventListener('input', () => {
       const r = validatePsi($psiInput.value);
-      if (!r.ok) { showError(r.msg); return; }
+      if (!r.ok) { state.psiError = r.msg; render(); return; }
+      state.psiError = null;
       state.psi = r.value;
       $psiSlider.value = Math.min(r.value, CONFIG.FULL_PSI);
       render();
@@ -118,6 +132,7 @@
 
     $psiSlider.addEventListener('input', () => {
       state.psi = Number($psiSlider.value);
+      state.psiError = null;
       $psiInput.value = state.psi;
       render();
     });

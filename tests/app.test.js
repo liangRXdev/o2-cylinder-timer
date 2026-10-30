@@ -125,3 +125,41 @@ test('小數錶壓：結果以實際輸入計算，畫面顯示值與輸入一�
   ui.typePsi(doc, '1500.5');
   assert.match(view().detail, /1500\.5 psi @ 15/);
 });
+
+test('無效輸入：不得殘留前一次結果（空白、負值、>2200）', () => {
+  for (const raw of ['', '-5', '3000']) {
+    const { doc, view } = setup();
+    ui.typePsi(doc, raw);
+    const v = view();
+    assert.ok(v.err, `${JSON.stringify(raw)} 應顯示錯誤`);
+    assert.equal(v.minutes, '—', `${JSON.stringify(raw)} 不可顯示舊結果`);
+    assert.match(v.box, /\bidle\b/);
+    assert.equal(v.detail, '');
+    assert.deepEqual(ui.currentRows(doc), []);
+  }
+});
+
+test('無效輸入時切換流量／容積：錯誤訊息保留、仍不顯示數字', () => {
+  const { doc, el, view } = setup();
+  ui.typePsi(doc, '');
+  ui.clickFlow(doc, 15);
+  assert.ok(view().err, '切換流量不可清掉錯誤');
+  assert.equal(view().minutes, '—');
+  ui.clickVol(doc, '2.8');
+  assert.ok(view().err, '切換容積不可清掉錯誤');
+  assert.equal(view().minutes, '—');
+  assert.match(el.footerNote.innerHTML, /0\.1905/);           // 其餘說明照常同步
+  // 恢復有效輸入 → 錯誤清除、結果出現
+  ui.typePsi(doc, '1500');
+  assert.equal(view().err, null);
+  assert.equal(view().minutes, '16 分');                     // 1300 × 2.8 / 14.7 / 15 = 16.5
+});
+
+test('無效輸入後拖動滑桿：錯誤清除、輸入框回填', () => {
+  const { doc, el, view } = setup();
+  ui.typePsi(doc, '-5');
+  ui.slide(doc, 900);
+  assert.equal(view().err, null);
+  assert.equal(el.psiInput.value, '900');
+  assert.equal(view().minutes, '32 分');
+});
