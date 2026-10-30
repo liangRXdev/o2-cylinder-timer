@@ -48,7 +48,7 @@
     if (!DECIMAL_RE.test(s) || Number.isNaN(v)) return { ok: false, msg: '請輸入有效的錶壓數值' };
     if (v < 0)  return { ok: false, msg: '錶壓不可為負值' };
     if (v > CONFIG.MAX_INPUT_PSI) return { ok: false, msg: `錶壓超出合理範圍（最大 ${CONFIG.MAX_INPUT_PSI} psi），請確認錶頭讀值` };
-    return { ok: true, value: Math.round(v) };
+    return { ok: true, value: v };   // 不四捨五入：round 會把 848.5 進位成 849，高估可用時間
   }
 
   return { CONFIG, TANKS, usableMin, validatePsi };

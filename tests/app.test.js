@@ -115,3 +115,13 @@ test('小時換算：≥60 分顯示「≈ X 小時 Y 分」，<60 分不顯示'
   assert.equal(view().minutes, '11 分');
   assert.doesNotMatch(view().detail, /小時/);
 });
+
+test('小數錶壓：結果以實際輸入計算，畫面顯示值與輸入一致', () => {
+  const { doc, view } = setup();
+  ui.clickFlow(doc, 15);
+  ui.typePsi(doc, '848.5');
+  assert.equal(view().minutes, '請更新');                     // 9.997 分，不可因 round → 849 變成 10 分
+  assert.match(view().detail, /848\.5 psi/);
+  ui.typePsi(doc, '1500.5');
+  assert.match(view().detail, /1500\.5 psi @ 15/);
+});

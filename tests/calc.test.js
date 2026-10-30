@@ -129,3 +129,11 @@ test('validatePsi：只收十進位／科學記號，拒絕 Number() 會接受�
   assert.deepEqual(validatePsi('+900'), { ok: true, value: 900 });
   assert.deepEqual(validatePsi('.5e3'), { ok: true, value: 500 });
 });
+
+test('validatePsi：小數不可四捨五入進位（不得高估可用時間）', () => {
+  assert.deepEqual(validatePsi('848.5'), { ok: true, value: 848.5 });
+  assert.deepEqual(validatePsi('200.4'), { ok: true, value: 200.4 });
+  // 3.4 L @ 15 L/min：10 分門檻在 psi = 200 + 10 × 15 × 14.7 / 3.4 = 848.53
+  assert.equal(usableMin(validatePsi('848.5').value, 15, 3.4), null);
+  assert.equal(usableMin(validatePsi('848.6').value, 15, 3.4), 10);
+});
