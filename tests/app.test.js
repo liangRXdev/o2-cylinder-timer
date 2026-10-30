@@ -206,3 +206,10 @@ test('壓力指示條：刻度標籤與色帶分界依 CONFIG 換算位置（0�
   assert.match(bg, /11\.11\d*%/);
   assert.match(bg, /33\.33\d*%/);
 });
+
+test('index.html 步驟編號連續（①②③…，不可跳號）', () => {
+  const html = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
+  const nums = [...html.matchAll(/class="section-label[^"]*">([①-⑩])/g)].map(m => m[1].codePointAt(0) - 0x2460 + 1);
+  assert.ok(nums.length >= 3);
+  assert.deepEqual(nums, nums.map((_, i) => i + 1));
+});
