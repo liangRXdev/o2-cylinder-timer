@@ -137,3 +137,14 @@ test('validatePsi：小數不可四捨五入進位（不得高估可用時間）
   assert.equal(usableMin(validatePsi('848.5').value, 15, 3.4), null);
   assert.equal(usableMin(validatePsi('848.6').value, 15, 3.4), 10);
 });
+
+test('usableMin：參數不合法丟 RangeError，不可回傳 NaN／Infinity 讓畫面顯示「NaN 分」', () => {
+  // 漏傳 vol（舊簽章 usableMin(psi, flow) 的呼叫端）
+  assert.throws(() => usableMin(1500, 5), RangeError);
+  assert.throws(() => usableMin(1500, 0, 3.4), RangeError);
+  assert.throws(() => usableMin(1500, -5, 3.4), RangeError);
+  assert.throws(() => usableMin(NaN, 5, 3.4), RangeError);
+  assert.throws(() => usableMin(Infinity, 5, 3.4), RangeError);
+  assert.throws(() => usableMin(1500, 5, 0), RangeError);
+  assert.throws(() => usableMin('1500', 5, 3.4), RangeError);
+});

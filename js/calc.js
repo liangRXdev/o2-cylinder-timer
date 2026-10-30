@@ -31,6 +31,9 @@
   // --- 核心計算（與紙本完全一致） ---
   // 回傳可用分鐘（整數，無條件捨去）；< UPDATE_THRESHOLD_MIN 或已達殘壓回傳 null（畫面顯示「請更新」）
   function usableMin(psi, flow, vol) {
+    if (!Number.isFinite(psi)) throw new RangeError(`錶壓必須為有限數值：${psi}`);
+    if (!Number.isFinite(flow) || flow <= 0) throw new RangeError(`流量必須為正數：${flow}`);
+    if (!Number.isFinite(vol) || vol <= 0) throw new RangeError(`水容積必須為正數：${vol}`);
     const factor = vol / CONFIG.PSI_PER_ATM;
     const avail = (psi - CONFIG.SAFETY_RESIDUAL_PSI) * factor;
     if (avail <= 0) return null;
