@@ -81,6 +81,7 @@ function createDocument(overrides = {}) {
   for (const [id, v] of Object.entries(overrides)) els[id].value = String(v);
   return {
     getElementById: id => els[id] || null,
+    defaultView: new FakeEl(),   // window：只用到 addEventListener('pageshow')
     el: els
   };
 }
@@ -89,6 +90,8 @@ function createDocument(overrides = {}) {
 const ui = {
   typePsi(doc, v) { const el = doc.el.psiInput; el.value = String(v); el.dispatch('input'); },
   slide(doc, v)   { const el = doc.el.psiSlider; el.value = String(v); el.dispatch('input'); },
+  // 模擬瀏覽器還原表單：直接改 value、不觸發 input 事件，之後才發 pageshow（Chromium 實測順序）
+  restoreForm(doc, v) { doc.el.psiInput.value = String(v); doc.defaultView.dispatch('pageshow'); },
   clickFlow(doc, f) {
     const g = doc.el.flowGrid; g.dispatch('click', g.children.find(b => b.dataset.flow === String(f)));
   },

@@ -163,3 +163,20 @@ test('無效輸入後拖動滑桿：錯誤清除、輸入框回填', () => {
   assert.equal(el.psiInput.value, '900');
   assert.equal(view().minutes, '32 分');
 });
+
+test('初始化與 pageshow 讀取輸入框現值（瀏覽器還原表單時，結果不可停在預設 1500）', () => {
+  const { el, view, doc } = setup({ psiInput: '900', psiSlider: '1500' });
+  assert.equal(view().minutes, '32 分');
+  assert.match(view().detail, /900 psi/);
+  assert.equal(el.psiSlider.value, '900');
+  assert.deepEqual(ui.currentRows(doc), [900]);
+  // Chromium：還原發生在 load 之後、pageshow 之前，且不觸發 input 事件
+  const late = setup();
+  ui.restoreForm(late.doc, '900');
+  assert.equal(late.view().minutes, '32 分');
+  assert.equal(late.el.psiSlider.value, '900');
+  // 還原到無效值 → idle＋錯誤
+  const bad = setup({ psiInput: '' });
+  assert.equal(bad.view().minutes, '—');
+  assert.ok(bad.view().err);
+});

@@ -121,14 +121,18 @@
     }
 
     // --- 事件 ---
-    $psiInput.addEventListener('input', () => {
+    function applyPsiInput() {
       const r = validatePsi($psiInput.value);
       if (!r.ok) { state.psiError = r.msg; render(); return; }
       state.psiError = null;
       state.psi = r.value;
       $psiSlider.value = Math.min(r.value, CONFIG.FULL_PSI);
       render();
-    });
+    }
+
+    $psiInput.addEventListener('input', applyPsiInput);
+    // 瀏覽器重新整理／上一頁還原表單值時不觸發 input（Chromium 於 load 後、pageshow 前還原）
+    if (doc.defaultView) doc.defaultView.addEventListener('pageshow', applyPsiInput);
 
     $psiSlider.addEventListener('input', () => {
       state.psi = Number($psiSlider.value);
@@ -173,7 +177,7 @@
     // --- init ---
     syncTankText();
     buildTable();
-    render();
+    applyPsiInput();   // 以輸入框現值為準：瀏覽器重新整理／上一頁可能還原成非預設值
 
     return { state };
   }
