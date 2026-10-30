@@ -136,10 +136,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; 
 .psi-bar-track {
   height: 14px;
   border-radius: 7px;
-  background: linear-gradient(to right,
-    #FCE8E8 0%, #FCE8E8 11.1%,        /* 0–200 殘壓 */
-    var(--warn-bg) 11.1%, var(--warn-bg) 33.3%,  /* 200–600 警示 */
-    #EAF3EE 33.3%, #EAF3EE 100%);     /* 600–1800 正常 */
+  background: #EAF3EE;              /* 色帶分界由 js/app.js 依 CONFIG 設定 */
   position: relative;
   margin-top: 0.4rem;
 }
@@ -153,11 +150,15 @@ input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; 
   transition: left var(--transition);
 }
 .psi-bar-labels {
-  display: flex; justify-content: space-between;
+  position: relative; height: 2.4em;
   font-size: 0.7rem; color: var(--text-muted);
   font-family: 'JetBrains Mono', monospace;
   margin-top: 0.3rem;
 }
+/* 刻度標籤以 left:% 對齊色帶分界；首尾改為靠左／靠右避免溢出 */
+.psi-bar-labels span { position: absolute; transform: translateX(-50%); text-align: center; white-space: nowrap; line-height: 1.2; }
+.psi-bar-labels span:first-child { transform: none; text-align: left; }
+.psi-bar-labels span:last-child { transform: translateX(-100%); text-align: right; }
 /* 對照表 */
 .ref-table { font-size: 0.9rem; }
 .ref-table th, .ref-table td {
@@ -221,12 +222,10 @@ input[type=range] { width: 100%; accent-color: var(--accent); min-height: 44px; 
                aria-label="錶壓 psi">
         <input type="range" id="psiSlider" min="0" max="1800" step="50" value="1500"
                aria-label="錶壓滑桿">
-        <div class="psi-bar-track" aria-hidden="true">
+        <div class="psi-bar-track" id="psiBarTrack" aria-hidden="true">
           <div class="psi-bar-marker" id="psiMarker"></div>
         </div>
-        <div class="psi-bar-labels">
-          <span>0</span><span>200<br>殘壓</span><span>600<br>換瓶線</span><span>1800<br>滿桶</span>
-        </div>
+        <div class="psi-bar-labels" id="psiBarLabels" aria-hidden="true"></div>
 
         <div class="section-label mt-4">④ 氧氣流量 (L/min)</div>
         <div class="flow-grid" id="flowGrid" role="group" aria-label="流量選擇">

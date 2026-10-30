@@ -193,3 +193,16 @@ test('殘壓分界：剛好 200 為「已達」殘壓，略高於 200 為「不�
   assert.equal(view().status, '可用時間不足 10 分鐘，立即更換鋼瓶');
   assert.match(view().detail, /200\.5 psi/);
 });
+
+test('壓力指示條：刻度標籤與色帶分界依 CONFIG 換算位置（0／200／600／1800）', () => {
+  const { el } = setup();
+  const labels = [...el.psiBarLabels.innerHTML.matchAll(/<span[^>]*style="left:([\d.]+)%[^"]*"[^>]*>(\d+)/g)]
+    .map(m => [Number(m[2]), Number(m[1])]);
+  assert.deepEqual(labels.map(l => l[0]), [0, 200, 600, 1800]);
+  for (const [psi, left] of labels) {
+    assert.ok(Math.abs(left - psi / 1800 * 100) < 0.01, `${psi} psi 標籤應在 ${(psi / 18).toFixed(2)}%，實際 ${left}%`);
+  }
+  const bg = el.psiBarTrack.style.background;
+  assert.match(bg, /11\.11\d*%/);
+  assert.match(bg, /33\.33\d*%/);
+});

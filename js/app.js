@@ -24,6 +24,8 @@
     const $psiInput   = doc.getElementById('psiInput');
     const $psiSlider  = doc.getElementById('psiSlider');
     const $psiMarker  = doc.getElementById('psiMarker');
+    const $psiTrack   = doc.getElementById('psiBarTrack');
+    const $psiLabels  = doc.getElementById('psiBarLabels');
     const $flowGrid   = doc.getElementById('flowGrid');
     const $resultBox  = doc.getElementById('resultBox');
     const $resultMin  = doc.getElementById('resultMinutes');
@@ -60,8 +62,7 @@
       const minutes = usableMin(psi, flow, state.vol);
 
       // 壓力指示條 marker（0–1800 線性）
-      const pct = Math.min(psi, CONFIG.FULL_PSI) / CONFIG.FULL_PSI * 100;
-      $psiMarker.style.left = `calc(${pct}% - 2px)`;
+      $psiMarker.style.left = `calc(${psiPct(psi)}% - 2px)`;
       $psiMarker.style.visibility = '';
 
       if (minutes === null) {
@@ -86,6 +87,28 @@
       }
 
       highlightTableRow();
+    }
+
+    // --- 壓力指示條 ---
+    // 0–FULL_PSI 線性換算成百分比；marker、色帶分界、刻度標籤共用，確保三者對齊
+    function psiPct(psi) {
+      return Math.min(Math.max(psi, 0), CONFIG.FULL_PSI) / CONFIG.FULL_PSI * 100;
+    }
+
+    function buildPsiBar() {
+      const r = psiPct(CONFIG.SAFETY_RESIDUAL_PSI), w = psiPct(CONFIG.WARN_SWAP_PSI);
+      $psiTrack.style.background = 'linear-gradient(to right, ' +
+        `#FCE8E8 0%, #FCE8E8 ${r}%, ` +                       // 0–200 殘壓
+        `var(--warn-bg) ${r}%, var(--warn-bg) ${w}%, ` +      // 200–600 警示
+        `#EAF3EE ${w}%, #EAF3EE 100%)`;                       // 600–1800 正常
+      const ticks = [
+        [0, ''],
+        [CONFIG.SAFETY_RESIDUAL_PSI, '殘壓'],
+        [CONFIG.WARN_SWAP_PSI, '換瓶線'],
+        [CONFIG.FULL_PSI, '滿桶']
+      ];
+      $psiLabels.innerHTML = ticks.map(([p, txt]) =>
+        `<span style="left:${psiPct(p)}%">${p}${txt ? `<br>${txt}` : ''}</span>`).join('');
     }
 
     // --- 對照表 ---
@@ -176,6 +199,7 @@
 
     // --- init ---
     syncTankText();
+    buildPsiBar();
     buildTable();
     applyPsiInput();   // 以輸入框現值為準：瀏覽器重新整理／上一頁可能還原成非預設值
 
