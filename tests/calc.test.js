@@ -112,3 +112,20 @@ test('validatePsi：無效數值', () => {
   assert.match(validatePsi('-1').msg, /負值/);
   assert.match(validatePsi('2201').msg, /2200/);
 });
+
+test('validatePsi：空白字串不可被當成 0 psi（Number(" ") === 0）', () => {
+  for (const raw of [' ', '   ', '\t', '\n', '　']) {
+    assert.equal(validatePsi(raw).ok, false, JSON.stringify(raw));
+  }
+  // 前後空白可容忍
+  assert.deepEqual(validatePsi(' 1500 '), { ok: true, value: 1500 });
+});
+
+test('validatePsi：只收十進位／科學記號，拒絕 Number() 會接受的其他寫法', () => {
+  for (const raw of ['0x10', '0b11', '0o17', '.', 'e3', '1e', '--1']) {
+    assert.equal(validatePsi(raw).ok, false, JSON.stringify(raw));
+  }
+  assert.deepEqual(validatePsi('1.5e3'), { ok: true, value: 1500 });
+  assert.deepEqual(validatePsi('+900'), { ok: true, value: 900 });
+  assert.deepEqual(validatePsi('.5e3'), { ok: true, value: 500 });
+});

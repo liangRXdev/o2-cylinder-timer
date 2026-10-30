@@ -39,9 +39,13 @@
   }
 
   // --- 輸入驗證（極端值處理） ---
+  // 只收十進位與科學記號；Number() 會把 ' '、'\t' 當 0，也接受 0x / 0b / 0o，故先以正規式把關
+  const DECIMAL_RE = /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i;
+
   function validatePsi(raw) {
-    const v = Number(raw);
-    if (raw === '' || Number.isNaN(v)) return { ok: false, msg: '請輸入有效的錶壓數值' };
+    const s = String(raw).trim();
+    const v = Number(s);
+    if (!DECIMAL_RE.test(s) || Number.isNaN(v)) return { ok: false, msg: '請輸入有效的錶壓數值' };
     if (v < 0)  return { ok: false, msg: '錶壓不可為負值' };
     if (v > CONFIG.MAX_INPUT_PSI) return { ok: false, msg: `錶壓超出合理範圍（最大 ${CONFIG.MAX_INPUT_PSI} psi），請確認錶頭讀值` };
     return { ok: true, value: Math.round(v) };
