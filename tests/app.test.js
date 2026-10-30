@@ -213,3 +213,21 @@ test('index.html 步驟編號連續（①②③…，不可跳號）', () => {
   assert.ok(nums.length >= 3);
   assert.deepEqual(nums, nums.map((_, i) => i + 1));
 });
+
+test('極端值總覽（UI）：科學記號、前後空白、上限 2200、超過上限', () => {
+  const { doc, view } = setup();
+  ui.typePsi(doc, '1e3');
+  assert.equal(view().minutes, '37 分');                      // 800 × 3.4 / 14.7 / 5 = 37.01
+  assert.match(view().detail, /1000 psi/);
+  ui.typePsi(doc, ' 900 ');
+  assert.equal(view().minutes, '32 分');
+  ui.typePsi(doc, 2200);
+  assert.equal(view().minutes, '92 分');                      // 2000 × 3.4 / 14.7 / 5 = 92.5
+  assert.equal(view().err, null);
+  ui.typePsi(doc, '2200.1');
+  assert.equal(view().minutes, '—');
+  assert.match(view().err, /2200/);
+  ui.typePsi(doc, 1800);
+  assert.equal(view().minutes, '74 分');
+  assert.deepEqual(ui.currentRows(doc), [1800]);
+});
