@@ -24,8 +24,8 @@
 
   // 可切換的鋼瓶容積（水容積 L）；factor 由容積自動推導
   const TANKS = Object.freeze({
-    '3.4': Object.freeze({ vol: 3.4, label: '3.4 L', desc: '0.5 立方米（病房／轉送）' }),
-    '2.8': Object.freeze({ vol: 2.8, label: '2.8 L', desc: '救護車用' })
+    '3.4': Object.freeze({ vol: 3.4, label: '3.4 L', desc: '標稱 0.5 m³（病房／轉送）' }),
+    '2.8': Object.freeze({ vol: 2.8, label: '2.8 L', desc: '標稱 0.4 m³（救護車用）' })
   });
 
   // --- 核心計算（與紙本完全一致） ---

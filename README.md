@@ -15,6 +15,8 @@ A static site (`index.html` + `js/`) with no backend and no build step, suited t
 | **3.4 L** (0.5 m³) | Small cylinder stocked at hospital nursing stations | Ward and OR transport |
 | **2.8 L** (0.4 m³) | Portable ambulance cylinder | Prehospital care, long-distance transport |
 
+> m³ is the manufacturer's nominal capacity (presumably at a ~150 bar fill: 3.4 L × 150 ≈ 510 L, 2.8 L × 150 ≈ 420 L). This tool uses 1800 psi as the full-cylinder reference (≈ 416 L and ≈ 343 L respectively), so the two figures are on different bases; rely on the minutes the tool computes.
+
 After switching, the result, reference-table values and formula coefficient all update instantly.
 
 ---
@@ -147,8 +149,8 @@ const CONFIG = Object.freeze({
 
 // Switchable cylinder volumes (to add a volume: add an entry + one HTML button)
 const TANKS = Object.freeze({
-  '3.4': { vol: 3.4, label: '3.4 L', desc: '0.5 立方米（病房／轉送）' },
-  '2.8': { vol: 2.8, label: '2.8 L', desc: '救護車用' }
+  '3.4': { vol: 3.4, label: '3.4 L', desc: '標稱 0.5 m³（病房／轉送）' },
+  '2.8': { vol: 2.8, label: '2.8 L', desc: '標稱 0.4 m³（救護車用）' }
 });
 ```
 

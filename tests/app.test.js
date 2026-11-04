@@ -29,6 +29,7 @@ test('初始：3.4 L、1500 psi、5 L/min → 60 分', () => {
   assert.match(v.box, /\bok\b/);
   assert.equal(v.err, null);
   assert.match(el.tankDesc.textContent, /3\.4 L/);
+  assert.match(el.tankDesc.textContent, /標稱 0\.5 m³/);
 });
 
 test('單筆結果與對照表同一格一致（兩容積 × 全部壓力 × 全部流量）', () => {
@@ -53,6 +54,7 @@ test('切換容積：結果、對照表、規格說明、對照表標題、頁�
   ui.clickVol(doc, '2.8');
   assert.equal(view().minutes, '49 分');                      // 1300 × 2.8 / 14.7 / 5 = 49.5
   assert.match(el.tankDesc.textContent, /2\.8 L/);
+  assert.match(el.tankDesc.textContent, /標稱 0\.4 m³/);
   assert.match(el.refTableLabel.textContent, /2\.8 L/);
   assert.match(el.footerNote.innerHTML, /× 0\.1905 ÷ 流量/);
   assert.match(el.refTable.innerHTML, /<tr class="row-full" data-psi="1800"><td class="psi-col">1800<\/td><td>20 分<\/td>/);
